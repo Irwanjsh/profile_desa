@@ -884,16 +884,15 @@ async function loadUmkmView(){
 
 async function loadUmkmStats(){
   try {
-    // Hitung jumlah produsen aktif (users yg punya produk approved)
     const { data: produk, error } = await taniClient
-      .from('produk')
-      .select('id, kategori, user_id')
-      .eq('status', 'approved');
+      .from('products')
+      .select('id, kategori, producer_id')
+      .eq('status', 'APPROVED');
 
     if(error || !produk) return;
 
     const jumlahProduk   = produk.length;
-    const jumlahProdusen = new Set(produk.map(p => p.user_id)).size;
+    const jumlahProdusen = new Set(produk.map(p => p.producer_id).filter(Boolean)).size;
     const jumlahKategori = new Set(produk.map(p => p.kategori).filter(Boolean)).size;
 
     const elProdusen = document.getElementById('stat-produsen');
