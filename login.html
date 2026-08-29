@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login Admin — Desa Cihawuk</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: { dark:'#173626', forest:'#1b4332', terra:'#bb6b3a', terrad:'#9c5a30', cream:'#f8f6ee', stone:'#efe9d8' },
+    fontFamily: { display:['Lora','serif'], sans:['Plus Jakarta Sans','sans-serif'] }
+  }}}
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  h1, .font-display { font-family: 'Lora', serif; }
+</style>
+</head>
+<body class="bg-dark min-h-screen flex items-center justify-center px-5">
+
+  <div class="w-full max-w-sm">
+    <!-- HEADER BRANDING -->
+    <div class="text-center mb-8">
+      <img src="cihawuk.jpg" alt="Logo Desa Cihawuk" class="w-16 h-16 rounded-full object-cover border-2 border-terra/60 mx-auto mb-3 shadow-lg">
+      <h1 class="font-display font-bold text-white text-xl">Admin Desa Cihawuk</h1>
+      <p class="text-white/60 text-[13px] mt-1">Panel Pengelolaan Konten Portal Desa</p>
+    </div>
+
+    <!-- FORM LOGIN -->
+    <form id="loginForm" class="bg-white rounded-2xl p-6 space-y-4 shadow-2xl">
+      <div>
+        <label class="block text-[12.5px] font-bold text-dark mb-1.5">Alamat Email Admin</label>
+        <input type="email" id="email" required placeholder="admin@desacihawuk.id" class="w-full px-4 py-3 rounded-xl border border-stone text-[14px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+      <div>
+        <label class="block text-[12.5px] font-bold text-dark mb-1.5">Kata Sandi (Password)</label>
+        <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-stone text-[14px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+
+      <div id="errorBox" class="hidden bg-red-50 border border-red-200 text-red-600 text-[13px] rounded-xl p-3"></div>
+
+      <button type="submit" id="submitBtn" class="w-full bg-terra hover:bg-terrad text-white font-bold py-3 rounded-xl text-[14px] transition shadow-md">
+        Masuk
+      </button>
+    </form>
+
+    <div class="text-center mt-6">
+      <a href="index.html" class="text-white/60 hover:text-white text-[12.5px] transition inline-flex items-center gap-1.5">
+        <i class="fa-solid fa-arrow-left text-[11px]"></i> Kembali ke Website Utama
+      </a>
+      <p class="text-white/40 text-[12px] mt-4">&copy; 2026 Portal Desa Cihawuk &middot; Kec. Kertasari, Kab. Bandung</p>
+    </div>
+  </div>
+
+  <!-- DEPENDENSI SCRIPT -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-desa.js"></script>
+  <script src="auth-desa.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const errorBox = document.getElementById('errorBox');
+      const btn = document.getElementById('submitBtn');
+
+      errorBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Memproses...';
+
+      try {
+        if (!window.DesaAuth) {
+          throw new Error('Modul autentikasi gagal dimuat. Silakan muat ulang halaman.');
+        }
+        const result = await window.DesaAuth.login(email, password);
+
+        if (result.ok) {
+          window.location.href = 'dashboard.html';
+          return;
+        } else {
+          errorBox.textContent = result.message;
+          errorBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error('[Login] Exception:', err);
+        errorBox.textContent = 'Terjadi kesalahan: ' + (err.message || err);
+        errorBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+      }
+    });
+
+    // Auto-redirect jika sudah memiliki sesi admin aktif
+    (async () => {
+      if (window.DesaSupabase && window.DesaSupabase.auth) {
+        const { data: { session } } = await window.DesaSupabase.auth.getSession();
+        if (session) {
+          const admin = await window.DesaAuth.requireAdmin();
+          if (admin) window.location.href = 'dashboard.html';
+        }
+      }
+    })();
+  </script>
+</body>
+</html>

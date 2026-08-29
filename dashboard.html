@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Admin — Desa Cihawuk</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: {
+    colors: { dark:'#173626', forest:'#1b4332', terra:'#bb6b3a', terrad:'#9c5a30', cream:'#f8f6ee', stone:'#efe9d8' },
+    fontFamily: { display:['Lora','serif'], sans:['Plus Jakarta Sans','sans-serif'] }
+  }}}
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8f6ee; }
+  h1, h2, .font-display { font-family: 'Lora', serif; }
+  .tab-btn { padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13.5px; color: #4b6355; transition: all 0.2s ease; white-space: nowrap; }
+  .tab-btn.active { background: #173626; color: #fff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(11, 27, 20, 0.65); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal-backdrop.active { display: flex; }
+  .img-preview-box { width: 100%; height: 120px; border-radius: 12px; border: 2px dashed #efe9d8; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #faf9f5; position: relative; }
+  .img-preview-box img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* --- MOBILE RESPONSIF --- */
+  /* Tab scroll horizontal di mobile */
+  .tab-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tab-scroll::-webkit-scrollbar { display: none; }
+
+  /* Tabel bisa scroll horizontal */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap table { min-width: 580px; }
+
+  /* Header wrap di layar kecil */
+  @media (max-width: 480px) {
+    .header-actions { gap: 8px !important; }
+    .header-actions a { font-size: 11px; padding: 5px 10px; }
+    .header-actions button { font-size: 11.5px; }
+    .header-brand p:first-child { font-size: 13.5px !important; }
+  }
+
+  /* Section heading + tombol wrap di mobile */
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .section-head .add-btn { flex-shrink: 0; }
+
+  /* Modal konten mobile padding */
+  @media (max-width: 640px) {
+    .modal-backdrop > div { padding: 20px !important; border-radius: 16px !important; max-height: 95vh !important; }
+    .modal-backdrop > div .grid-cols-2 { grid-template-columns: 1fr !important; }
+    .modal-backdrop > div .grid-cols-3 { grid-template-columns: 1fr 1fr !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER NAVBAR -->
+<header class="bg-dark sticky top-0 z-40 shadow-md">
+  <div class="max-w-6xl mx-auto px-4 sm:px-5 h-[60px] sm:h-[64px] flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <img src="cihawuk.jpg" alt="Logo Desa Cihawuk" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-terra/50 shadow-sm flex-shrink-0">
+      <div class="header-brand min-w-0">
+        <p class="font-display font-bold text-white text-[14px] sm:text-[15px] leading-tight truncate">Admin Desa Cihawuk</p>
+        <p id="adminName" class="text-[10.5px] sm:text-[11px] text-white/60 truncate">Memuat sesi...</p>
+      </div>
+    </div>
+    <div class="header-actions flex items-center gap-2 sm:gap-4 flex-shrink-0">
+      <a href="index.html" target="_blank" class="text-white/80 hover:text-white text-[11px] sm:text-[12.5px] font-semibold flex items-center gap-1.5 bg-white/10 px-2.5 sm:px-3 py-1.5 rounded-full transition">
+        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] sm:text-[11px]"></i> <span class="hidden sm:inline">Lihat</span> Web
+      </a>
+      <button onclick="window.DesaAuth.logout()" class="text-white/70 hover:text-white text-[12px] sm:text-[13px] font-semibold flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Keluar</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- KONTEN UTAMA DASHBOARD -->
+<main id="dashboardContent" class="max-w-6xl mx-auto px-4 sm:px-5 py-6 sm:py-8 hidden">
+
+  <!-- NAVIGASI TAB MODUL -->
+  <div class="tab-scroll mb-6">
+    <div class="flex gap-2 bg-white rounded-2xl p-1.5 border border-stone shadow-sm w-max sm:w-fit">
+      <button class="tab-btn active" data-tab="staf" onclick="switchTab('staf', this)">
+        <i class="fa-solid fa-users mr-1.5"></i>Staf
+      </button>
+      <button class="tab-btn" data-tab="edukasi" onclick="switchTab('edukasi', this)">
+        <i class="fa-solid fa-book-open mr-1.5"></i>Edukasi
+      </button>
+      <button class="tab-btn" data-tab="wisata" onclick="switchTab('wisata', this)">
+        <i class="fa-solid fa-compass mr-1.5"></i>Wisata
+      </button>
+      <button class="tab-btn" data-tab="berita" onclick="switchTab('berita', this)">
+        <i class="fa-solid fa-newspaper mr-1.5"></i>Berita
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB 1: STRUKTUR STAF DESA -->
+  <div id="tab-staf" class="tab-panel active">
+    <div class="section-head">
+      <div>
+        <h2 class="font-display text-lg sm:text-xl font-bold text-dark">Struktur Organisasi Desa</h2>
+        <p class="text-[12px] sm:text-[12.5px] text-[#5c7568]">Kelola foto, nama, jabatan, dan urutan hierarki perangkat desa.</p>
+      </div>
+      <button onclick="openStafModal()" class="add-btn bg-terra hover:bg-terrad text-white text-[12.5px] sm:text-[13px] font-bold px-4 py-2.5 rounded-full transition flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-plus"></i> Tambah Staf
+      </button>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone overflow-hidden shadow-sm">
+      <div class="table-wrap">
+        <table class="w-full text-[13px] sm:text-[13.5px]">
+          <thead class="bg-cream border-b border-stone text-[10.5px] sm:text-[11px] uppercase text-[#5c7568] tracking-wide">
+            <tr>
+              <th class="text-left px-3 sm:px-4 py-3">Foto</th>
+              <th class="text-left px-3 sm:px-4 py-3">Nama</th>
+              <th class="text-left px-3 sm:px-4 py-3">Jabatan</th>
+              <th class="text-left px-3 sm:px-4 py-3">Tingkat</th>
+              <th class="text-left px-3 sm:px-4 py-3">Urutan</th>
+              <th class="text-right px-3 sm:px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="stafTableBody"></tbody>
+        </table>
+      </div>
+      <p id="stafEmptyState" class="hidden text-center text-[13px] text-[#6b8577] py-10">Belum ada data staf. Klik "Tambah Staf" untuk mulai.</p>
+    </div>
+  </div>
+
+  <!-- TAB 2: KONTEN EDUKASI -->
+  <div id="tab-edukasi" class="tab-panel">
+    <div class="section-head">
+      <div>
+        <h2 class="font-display text-lg sm:text-xl font-bold text-dark">Konten &amp; Edukasi Konservasi</h2>
+        <p class="text-[12px] sm:text-[12.5px] text-[#5c7568]">Kelola artikel edukasi, gambar penjelas, dan ikon topik.</p>
+      </div>
+      <button onclick="openEdukasiModal()" class="add-btn bg-terra hover:bg-terrad text-white text-[12.5px] sm:text-[13px] font-bold px-4 py-2.5 rounded-full transition flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-plus"></i> Tambah Topik
+      </button>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone overflow-hidden shadow-sm">
+      <div class="table-wrap">
+        <table class="w-full text-[13px] sm:text-[13.5px]">
+          <thead class="bg-cream border-b border-stone text-[10.5px] sm:text-[11px] uppercase text-[#5c7568] tracking-wide">
+            <tr>
+              <th class="text-left px-3 sm:px-4 py-3">Foto/Sampul</th>
+              <th class="text-left px-3 sm:px-4 py-3">Judul Topik</th>
+              <th class="text-left px-3 sm:px-4 py-3">Ikon</th>
+              <th class="text-left px-3 sm:px-4 py-3">Urutan</th>
+              <th class="text-right px-3 sm:px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="edukasiTableBody"></tbody>
+        </table>
+      </div>
+      <p id="edukasiEmptyState" class="hidden text-center text-[13px] text-[#6b8577] py-10">Belum ada konten edukasi. Klik "Tambah Topik" untuk mulai.</p>
+    </div>
+  </div>
+
+  <!-- TAB 3: DESTINASI WISATA -->
+  <div id="tab-wisata" class="tab-panel">
+    <div class="section-head">
+      <div>
+        <h2 class="font-display text-lg sm:text-xl font-bold text-dark">Destinasi Wisata Desa</h2>
+        <p class="text-[12px] sm:text-[12.5px] text-[#5c7568]">Kelola foto galeri wisata, deskripsi, tiket, dan informasi pendukung.</p>
+      </div>
+      <button onclick="openWisataModal()" class="add-btn bg-terra hover:bg-terrad text-white text-[12.5px] sm:text-[13px] font-bold px-4 py-2.5 rounded-full transition flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-plus"></i> Tambah Destinasi
+      </button>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone overflow-hidden shadow-sm">
+      <div class="table-wrap">
+        <table class="w-full text-[13px] sm:text-[13.5px]">
+          <thead class="bg-cream border-b border-stone text-[10.5px] sm:text-[11px] uppercase text-[#5c7568] tracking-wide">
+            <tr>
+              <th class="text-left px-3 sm:px-4 py-3">Foto</th>
+              <th class="text-left px-3 sm:px-4 py-3">Nama Destinasi</th>
+              <th class="text-left px-3 sm:px-4 py-3">Kategori</th>
+              <th class="text-left px-3 sm:px-4 py-3">Tiket</th>
+              <th class="text-left px-3 sm:px-4 py-3">Urutan</th>
+              <th class="text-right px-3 sm:px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="wisataTableBody"></tbody>
+        </table>
+      </div>
+      <p id="wisataEmptyState" class="hidden text-center text-[13px] text-[#6b8577] py-10">Belum ada destinasi wisata. Klik "Tambah Destinasi" untuk mulai.</p>
+    </div>
+  </div>
+
+  <!-- TAB 4: BERITA DESA -->
+  <div id="tab-berita" class="tab-panel">
+    <div class="section-head">
+      <div>
+        <h2 class="font-display text-lg sm:text-xl font-bold text-dark">Berita &amp; Pengumuman Desa</h2>
+        <p class="text-[12px] sm:text-[12.5px] text-[#5c7568]">Kelola artikel berita terbaru, pengumuman kegiatan, dan foto sampul berita.</p>
+      </div>
+      <button onclick="openBeritaModal()" class="add-btn bg-terra hover:bg-terrad text-white text-[12.5px] sm:text-[13px] font-bold px-4 py-2.5 rounded-full transition flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-plus"></i> Tambah Berita
+      </button>
+    </div>
+    <div class="bg-white rounded-2xl border border-stone overflow-hidden shadow-sm">
+      <div class="table-wrap">
+        <table class="w-full text-[13px] sm:text-[13.5px]">
+          <thead class="bg-cream border-b border-stone text-[10.5px] sm:text-[11px] uppercase text-[#5c7568] tracking-wide">
+            <tr>
+              <th class="text-left px-3 sm:px-4 py-3">Foto</th>
+              <th class="text-left px-3 sm:px-4 py-3">Judul Berita</th>
+              <th class="text-left px-3 sm:px-4 py-3">Kategori</th>
+              <th class="text-left px-3 sm:px-4 py-3">Penulis</th>
+              <th class="text-left px-3 sm:px-4 py-3">Tanggal</th>
+              <th class="text-right px-3 sm:px-4 py-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="beritaTableBody"></tbody>
+        </table>
+      </div>
+      <p id="beritaEmptyState" class="hidden text-center text-[13px] text-[#6b8577] py-10">Belum ada artikel berita. Klik "Tambah Berita" untuk mulai.</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- MODALS -->
+<!-- ============================================================ -->
+
+<!-- MODAL 1: STAF DESA -->
+<div id="stafModal" class="modal-backdrop">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone">
+      <h3 id="stafModalTitle" class="font-display text-lg font-bold text-dark">Tambah Staf</h3>
+      <button onclick="closeStafModal()" class="text-gray-400 hover:text-dark text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="stafForm" class="space-y-4">
+      <input type="hidden" id="staf-id">
+      <input type="hidden" id="staf-foto-existing">
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1.5">Foto Profil Staf</label>
+        <div class="img-preview-box mb-2" id="stafPreviewContainer">
+          <span class="text-[12px] text-gray-400" id="stafPreviewPlaceholder"><i class="fa-solid fa-image text-xl block mb-1"></i>Belum ada foto</span>
+          <img id="stafPreviewImg" class="hidden" alt="Preview Foto">
+        </div>
+        <input type="file" id="staf-foto-file" accept="image/*" class="w-full text-[12.5px] text-dark file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20">
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Nama Lengkap</label>
+        <input type="text" id="staf-nama" required placeholder="Cth: Bpk. Dadang Suprapto" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Jabatan</label>
+        <input type="text" id="staf-jabatan" required placeholder="Cth: Kepala Desa / Sekretaris Desa" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Tingkat Hirarki</label>
+          <input type="number" id="staf-tingkat" required min="1" value="1" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+          <p class="text-[10.5px] text-[#6b8577] mt-1">1=Kades, 2=Sekdes, 3=Kaur/Kasi</p>
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Urutan Tampilan</label>
+          <input type="number" id="staf-urutan" required min="0" value="0" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+      </div>
+
+      <div id="stafFormError" class="hidden bg-red-50 border border-red-200 text-red-600 text-[12.5px] rounded-xl p-3"></div>
+
+      <div class="flex gap-2 pt-2 border-t border-stone">
+        <button type="button" onclick="closeStafModal()" class="flex-1 border border-stone text-dark font-semibold py-2.5 rounded-xl text-[13.5px] hover:bg-stone/50 transition">Batal</button>
+        <button type="submit" id="stafSubmitBtn" class="flex-1 bg-terra hover:bg-terrad text-white font-bold py-2.5 rounded-xl text-[13.5px] transition">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: KONTEN EDUKASI -->
+<div id="edukasiModal" class="modal-backdrop">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone">
+      <h3 id="edukasiModalTitle" class="font-display text-lg font-bold text-dark">Tambah Topik Edukasi</h3>
+      <button onclick="closeEdukasiModal()" class="text-gray-400 hover:text-dark text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="edukasiForm" class="space-y-4">
+      <input type="hidden" id="edukasi-id">
+      <input type="hidden" id="edukasi-foto-existing">
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1.5">Foto Sampul / Gambar Penjelas</label>
+        <div class="img-preview-box mb-2" id="edukasiPreviewContainer">
+          <span class="text-[12px] text-gray-400" id="edukasiPreviewPlaceholder"><i class="fa-solid fa-image text-xl block mb-1"></i>Belum ada gambar</span>
+          <img id="edukasiPreviewImg" class="hidden" alt="Preview Sampul">
+        </div>
+        <input type="file" id="edukasi-foto-file" accept="image/*" class="w-full text-[12.5px] text-dark file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20">
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Judul Topik</label>
+        <input type="text" id="edukasi-judul" required placeholder="Cth: Program Pembibitan & Konservasi Air Hulu Citarum" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Ikon Topik</label>
+          <select id="edukasi-icon" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+            <option value="fa-book-open">📖 Edukasi / Belajar</option>
+            <option value="fa-water">💧 Air / Sungai</option>
+            <option value="fa-seedling">🌱 Tanaman / Pembibitan</option>
+            <option value="fa-recycle">♻️ Daur Ulang / 3R</option>
+            <option value="fa-leaf">🍃 Lingkungan Hidup</option>
+            <option value="fa-tree">🌳 Hutan / Pohon</option>
+            <option value="fa-shower">🚿 Sanitasi / IPAL</option>
+            <option value="fa-users">👥 Komunitas / Warga</option>
+            <option value="fa-sun">☀️ Energi / Alam</option>
+            <option value="fa-wheat-awn">🌾 Pertanian</option>
+            <option value="fa-trash">🗑️ Pengelolaan Sampah</option>
+            <option value="fa-heart">❤️ Kesehatan / Sosial</option>
+            <option value="fa-graduation-cap">🎓 Pendidikan</option>
+            <option value="fa-circle-info">ℹ️ Informasi Umum</option>
+          </select>
+          <p class="text-[10.5px] text-[#6b8577] mt-1">Pilih ikon yang sesuai topik (muncul jika tidak ada foto)</p>
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Urutan</label>
+          <input type="number" id="edukasi-urutan" required min="0" value="0" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Konten Materi Edukasi</label>
+        <textarea id="edukasi-konten" required rows="5" placeholder="Tuliskan materi edukasi di sini..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra"></textarea>
+      </div>
+
+      <div id="edukasiFormError" class="hidden bg-red-50 border border-red-200 text-red-600 text-[12.5px] rounded-xl p-3"></div>
+
+      <div class="flex gap-2 pt-2 border-t border-stone">
+        <button type="button" onclick="closeEdukasiModal()" class="flex-1 border border-stone text-dark font-semibold py-2.5 rounded-xl text-[13.5px] hover:bg-stone/50 transition">Batal</button>
+        <button type="submit" id="edukasiSubmitBtn" class="flex-1 bg-terra hover:bg-terrad text-white font-bold py-2.5 rounded-xl text-[13.5px] transition">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 3: WISATA -->
+<div id="wisataModal" class="modal-backdrop">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone">
+      <h3 id="wisataModalTitle" class="font-display text-lg font-bold text-dark">Tambah Destinasi</h3>
+      <button onclick="closeWisataModal()" class="text-gray-400 hover:text-dark text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="wisataForm" class="space-y-4">
+      <input type="hidden" id="wisata-id">
+      <input type="hidden" id="wisata-foto-existing">
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1.5">Foto Utama Wisata</label>
+        <div class="img-preview-box mb-2" id="wisataPreviewContainer">
+          <span class="text-[12px] text-gray-400" id="wisataPreviewPlaceholder"><i class="fa-solid fa-image text-xl block mb-1"></i>Belum ada foto</span>
+          <img id="wisataPreviewImg" class="hidden" alt="Preview Foto Wisata">
+        </div>
+        <input type="file" id="wisata-foto-file" accept="image/*" class="w-full text-[12.5px] text-dark file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20">
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Nama Destinasi Wisata</label>
+        <input type="text" id="wisata-nama" required placeholder="Cth: Puncak Cae Cihawuk" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Kategori / Badge</label>
+          <select id="wisata-badge" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+            <option value="Wisata Alam">Wisata Alam</option>
+            <option value="Agrowisata">Agrowisata</option>
+            <option value="Wisata Budaya">Wisata Budaya</option>
+            <option value="Ekowisata">Ekowisata</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Urutan</label>
+          <input type="number" id="wisata-urutan" required min="0" value="0" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Deskripsi Singkat</label>
+        <textarea id="wisata-deskripsi" required rows="3" placeholder="Jelaskan keindahan dan keunggulan destinasi..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra"></textarea>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Ketinggian</label>
+          <input type="text" id="wisata-ketinggian" placeholder="2.253 mdpl" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Durasi</label>
+          <input type="text" id="wisata-durasi" placeholder="3-4 jam" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Tiket Masuk</label>
+          <input type="text" id="wisata-tiket" placeholder="Rp 15.000" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Tag Fasilitas (pisahkan dengan koma)</label>
+        <input type="text" id="wisata-tags" placeholder="Pos Pendakian, Pemandu Lokal, Area Parkir" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+
+      <div id="wisataFormError" class="hidden bg-red-50 border border-red-200 text-red-600 text-[12.5px] rounded-xl p-3"></div>
+
+      <div class="flex gap-2 pt-2 border-t border-stone">
+        <button type="button" onclick="closeWisataModal()" class="flex-1 border border-stone text-dark font-semibold py-2.5 rounded-xl text-[13.5px] hover:bg-stone/50 transition">Batal</button>
+        <button type="submit" id="wisataSubmitBtn" class="flex-1 bg-terra hover:bg-terrad text-white font-bold py-2.5 rounded-xl text-[13.5px] transition">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 4: BERITA DESA -->
+<div id="beritaModal" class="modal-backdrop">
+  <div class="bg-white rounded-2xl max-w-xl w-full p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div class="flex items-center justify-between mb-4 pb-2 border-b border-stone">
+      <h3 id="beritaModalTitle" class="font-display text-lg font-bold text-dark">Tambah Berita Desa</h3>
+      <button onclick="closeBeritaModal()" class="text-gray-400 hover:text-dark text-lg"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="beritaForm" class="space-y-4">
+      <input type="hidden" id="berita-id">
+      <input type="hidden" id="berita-foto-existing">
+
+      <!-- Upload Foto Sampul Berita -->
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1.5">Foto Sampul Berita</label>
+        <div class="img-preview-box mb-2" id="beritaPreviewContainer">
+          <span class="text-[12px] text-gray-400" id="beritaPreviewPlaceholder"><i class="fa-solid fa-newspaper text-xl block mb-1"></i>Belum ada foto sampul</span>
+          <img id="beritaPreviewImg" class="hidden" alt="Preview Foto Sampul">
+        </div>
+        <input type="file" id="berita-foto-file" accept="image/*" class="w-full text-[12.5px] text-dark file:mr-3 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-terra/10 file:text-terra hover:file:bg-terra/20">
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Judul Berita</label>
+        <input type="text" id="berita-judul" required placeholder="Cth: Musrenbangdesa Cihawuk Bahas Prioritas Pembangunan Tahun 2026" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Kategori Berita</label>
+          <select id="berita-kategori" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+            <option value="Kegiatan Desa">Kegiatan Desa</option>
+            <option value="Pengumuman">Pengumuman</option>
+            <option value="Pembangunan">Pembangunan</option>
+            <option value="Kesehatan & Sosial">Kesehatan &amp; Sosial</option>
+            <option value="Pertanian & UMKM">Pertanian &amp; UMKM</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[12px] font-bold text-dark mb-1">Penulis / Redaksi</label>
+          <input type="text" id="berita-penulis" value="Humas Desa Cihawuk" required class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Ringkasan Berita (Muncul pada kartu berita)</label>
+        <textarea id="berita-ringkasan" rows="2" placeholder="Tuliskan 1-2 kalimat ringkasan singkat berita..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Isi Berita Lengkap</label>
+        <textarea id="berita-konten" required rows="6" placeholder="Tuliskan seluruh isi artikel berita di sini..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13px] focus:outline-none focus:ring-2 focus:ring-terra"></textarea>
+      </div>
+
+      <div id="beritaFormError" class="hidden bg-red-50 border border-red-200 text-red-600 text-[12.5px] rounded-xl p-3"></div>
+
+      <div class="flex gap-2 pt-2 border-t border-stone">
+        <button type="button" onclick="closeBeritaModal()" class="flex-1 border border-stone text-dark font-semibold py-2.5 rounded-xl text-[13.5px] hover:bg-stone/50 transition">Batal</button>
+        <button type="submit" id="beritaSubmitBtn" class="flex-1 bg-terra hover:bg-terrad text-white font-bold py-2.5 rounded-xl text-[13.5px] transition">Simpan Berita</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- SCRIPT PENGELOLA DASHBOARD -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-desa.js"></script>
+<script src="auth-desa.js"></script>
+<script src="data-desa.js"></script>
+
+<script>
+  // Helper Preview File Gambar
+  function setupImagePreview(fileInputId, imgId, placeholderId) {
+    const fileInput = document.getElementById(fileInputId);
+    const img = document.getElementById(imgId);
+    const placeholder = document.getElementById(placeholderId);
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          img.src = evt.target.result;
+          img.classList.remove('hidden');
+          placeholder.classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  function setPreviewUrl(imgId, placeholderId, url) {
+    const img = document.getElementById(imgId);
+    const placeholder = document.getElementById(placeholderId);
+    if (url) {
+      img.src = url;
+      img.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    } else {
+      img.src = '';
+      img.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    }
+  }
+
+  // Switch Tab Handler
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+  }
+
+  /* -----------------------------------------------------------
+     1. STRUKTUR STAF DESA
+     ----------------------------------------------------------- */
+  function openStafModal(staf) {
+    document.getElementById('stafForm').reset();
+    document.getElementById('stafFormError').classList.add('hidden');
+
+    if (staf) {
+      document.getElementById('stafModalTitle').textContent = 'Edit Data Staf';
+      document.getElementById('staf-id').value = staf.id;
+      document.getElementById('staf-nama').value = staf.nama;
+      document.getElementById('staf-jabatan').value = staf.jabatan;
+      document.getElementById('staf-tingkat').value = staf.tingkat;
+      document.getElementById('staf-urutan').value = staf.urutan;
+      document.getElementById('staf-foto-existing').value = staf.foto_url || '';
+      setPreviewUrl('stafPreviewImg', 'stafPreviewPlaceholder', staf.foto_url);
+    } else {
+      document.getElementById('stafModalTitle').textContent = 'Tambah Staf Baru';
+      document.getElementById('staf-id').value = '';
+      document.getElementById('staf-foto-existing').value = '';
+      setPreviewUrl('stafPreviewImg', 'stafPreviewPlaceholder', null);
+    }
+    document.getElementById('stafModal').classList.add('active');
+  }
+
+  function closeStafModal() {
+    document.getElementById('stafModal').classList.remove('active');
+  }
+
+  async function renderStafTable() {
+    const list = await window.DesaData.getStafDesa();
+    const tbody = document.getElementById('stafTableBody');
+    const empty = document.getElementById('stafEmptyState');
+
+    if (list.length === 0) {
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = list.map(s => {
+      const avatarHtml = s.foto_url
+        ? `<img src="${s.foto_url}" class="w-10 h-10 rounded-full object-cover border border-stone" alt="${s.nama}">`
+        : `<div class="w-10 h-10 rounded-full bg-forest/10 text-forest font-bold flex items-center justify-center text-xs"><i class="fa-solid fa-user"></i></div>`;
+
+      return `
+      <tr class="border-t border-stone hover:bg-stone/20 transition">
+        <td class="px-4 py-3">${avatarHtml}</td>
+        <td class="px-4 py-3 font-semibold text-dark">${s.nama}</td>
+        <td class="px-4 py-3 text-[#3c5347]">${s.jabatan}</td>
+        <td class="px-4 py-3 text-[#3c5347]"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone/70">Tingkat ${s.tingkat}</span></td>
+        <td class="px-4 py-3 text-[#3c5347]">${s.urutan}</td>
+        <td class="px-4 py-3 text-right">
+          <button onclick='openStafModal(${JSON.stringify(s)})' class="text-terra font-bold text-[12.5px] hover:underline mr-3"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+          <button onclick="handleDeleteStaf('${s.id}')" class="text-red-500 font-bold text-[12.5px] hover:underline"><i class="fa-solid fa-trash mr-1"></i>Hapus</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function handleDeleteStaf(id) {
+    if (!confirm('Hapus data staf ini?')) return;
+    const result = await window.DesaData.deleteStaf(id);
+    if (result.ok) { renderStafTable(); }
+    else { alert('Gagal menghapus: ' + result.message); }
+  }
+
+  document.getElementById('stafForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('stafSubmitBtn');
+    const errBox = document.getElementById('stafFormError');
+    errBox.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    try {
+      const fileInput = document.getElementById('staf-foto-file');
+      let fotoUrl = document.getElementById('staf-foto-existing').value || null;
+
+      if (fileInput.files && fileInput.files[0]) {
+        btn.textContent = 'Mengunggah Foto...';
+        const uploadedUrl = await window.DesaData.uploadFotoFile(fileInput.files[0], 'staf');
+        if (uploadedUrl) fotoUrl = uploadedUrl;
+      }
+
+      const item = {
+        id: document.getElementById('staf-id').value || null,
+        nama: document.getElementById('staf-nama').value.trim(),
+        jabatan: document.getElementById('staf-jabatan').value.trim(),
+        foto_url: fotoUrl,
+        tingkat: document.getElementById('staf-tingkat').value,
+        urutan: document.getElementById('staf-urutan').value
+      };
+
+      const result = await window.DesaData.saveStaf(item);
+      if (result.ok) {
+        closeStafModal();
+        renderStafTable();
+      } else {
+        errBox.textContent = 'Gagal menyimpan: ' + result.message;
+        errBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errBox.textContent = 'Terjadi kesalahan: ' + err.message;
+      errBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+    }
+  });
+
+  /* -----------------------------------------------------------
+     2. KONTEN EDUKASI
+     ----------------------------------------------------------- */
+  function openEdukasiModal(item) {
+    document.getElementById('edukasiForm').reset();
+    document.getElementById('edukasiFormError').classList.add('hidden');
+
+    if (item) {
+      document.getElementById('edukasiModalTitle').textContent = 'Edit Topik Edukasi';
+      document.getElementById('edukasi-id').value = item.id;
+      document.getElementById('edukasi-judul').value = item.judul;
+      document.getElementById('edukasi-icon').value = item.icon;
+      document.getElementById('edukasi-urutan').value = item.urutan;
+      document.getElementById('edukasi-konten').value = item.konten;
+      document.getElementById('edukasi-foto-existing').value = item.foto_url || '';
+      setPreviewUrl('edukasiPreviewImg', 'edukasiPreviewPlaceholder', item.foto_url);
+    } else {
+      document.getElementById('edukasiModalTitle').textContent = 'Tambah Topik Edukasi Baru';
+      document.getElementById('edukasi-id').value = '';
+      document.getElementById('edukasi-foto-existing').value = '';
+      setPreviewUrl('edukasiPreviewImg', 'edukasiPreviewPlaceholder', null);
+    }
+    document.getElementById('edukasiModal').classList.add('active');
+  }
+
+  function closeEdukasiModal() {
+    document.getElementById('edukasiModal').classList.remove('active');
+  }
+
+  async function renderEdukasiTable() {
+    const list = await window.DesaData.getEdukasi();
+    const tbody = document.getElementById('edukasiTableBody');
+    const empty = document.getElementById('edukasiEmptyState');
+
+    if (list.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = list.map(e => {
+      const imgHtml = e.foto_url
+        ? `<img src="${e.foto_url}" class="w-12 h-9 rounded-lg object-cover border border-stone" alt="${e.judul}">`
+        : `<div class="w-12 h-9 rounded-lg bg-terra/10 text-terra flex items-center justify-center text-xs"><i class="fa-solid ${e.icon || 'fa-book'}"></i></div>`;
+
+      return `
+      <tr class="border-t border-stone hover:bg-stone/20 transition">
+        <td class="px-4 py-3">${imgHtml}</td>
+        <td class="px-4 py-3 font-semibold text-dark">${e.judul}</td>
+        <td class="px-4 py-3 text-[#3c5347]"><i class="fa-solid ${e.icon}"></i> ${e.icon}</td>
+        <td class="px-4 py-3 text-[#3c5347]">${e.urutan}</td>
+        <td class="px-4 py-3 text-right">
+          <button onclick='openEdukasiModal(${JSON.stringify(e)})' class="text-terra font-bold text-[12.5px] hover:underline mr-3"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+          <button onclick="handleDeleteEdukasi('${e.id}')" class="text-red-500 font-bold text-[12.5px] hover:underline"><i class="fa-solid fa-trash mr-1"></i>Hapus</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function handleDeleteEdukasi(id) {
+    if (!confirm('Hapus topik edukasi ini?')) return;
+    const result = await window.DesaData.deleteEdukasi(id);
+    if (result.ok) { renderEdukasiTable(); } else { alert('Gagal menghapus: ' + result.message); }
+  }
+
+  document.getElementById('edukasiForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('edukasiSubmitBtn');
+    const errBox = document.getElementById('edukasiFormError');
+    errBox.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    try {
+      const fileInput = document.getElementById('edukasi-foto-file');
+      let fotoUrl = document.getElementById('edukasi-foto-existing').value || null;
+
+      if (fileInput.files && fileInput.files[0]) {
+        btn.textContent = 'Mengunggah Sampul...';
+        const uploadedUrl = await window.DesaData.uploadFotoFile(fileInput.files[0], 'edukasi');
+        if (uploadedUrl) fotoUrl = uploadedUrl;
+      }
+
+      const item = {
+        id: document.getElementById('edukasi-id').value || null,
+        judul: document.getElementById('edukasi-judul').value.trim(),
+        icon: document.getElementById('edukasi-icon').value.trim(),
+        foto_url: fotoUrl,
+        urutan: document.getElementById('edukasi-urutan').value,
+        konten: document.getElementById('edukasi-konten').value.trim()
+      };
+
+      const result = await window.DesaData.saveEdukasi(item);
+      if (result.ok) { closeEdukasiModal(); renderEdukasiTable(); }
+      else {
+        errBox.textContent = 'Gagal menyimpan: ' + result.message;
+        errBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errBox.textContent = 'Terjadi kesalahan: ' + err.message;
+      errBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+    }
+  });
+
+  /* -----------------------------------------------------------
+     3. DESTINASI WISATA
+     ----------------------------------------------------------- */
+  function openWisataModal(item) {
+    document.getElementById('wisataForm').reset();
+    document.getElementById('wisataFormError').classList.add('hidden');
+
+    if (item) {
+      document.getElementById('wisataModalTitle').textContent = 'Edit Destinasi Wisata';
+      document.getElementById('wisata-id').value = item.id;
+      document.getElementById('wisata-nama').value = item.nama;
+      document.getElementById('wisata-badge').value = item.badge;
+      document.getElementById('wisata-urutan').value = item.urutan;
+      document.getElementById('wisata-deskripsi').value = item.deskripsi;
+      document.getElementById('wisata-ketinggian').value = item.ketinggian || '';
+      document.getElementById('wisata-durasi').value = item.durasi || '';
+      document.getElementById('wisata-tiket').value = item.tiket || '';
+      document.getElementById('wisata-tags').value = (item.tags || []).join(', ');
+      document.getElementById('wisata-foto-existing').value = item.foto_url || '';
+      setPreviewUrl('wisataPreviewImg', 'wisataPreviewPlaceholder', item.foto_url);
+    } else {
+      document.getElementById('wisataModalTitle').textContent = 'Tambah Destinasi Baru';
+      document.getElementById('wisata-id').value = '';
+      document.getElementById('wisata-foto-existing').value = '';
+      setPreviewUrl('wisataPreviewImg', 'wisataPreviewPlaceholder', null);
+    }
+    document.getElementById('wisataModal').classList.add('active');
+  }
+
+  function closeWisataModal() {
+    document.getElementById('wisataModal').classList.remove('active');
+  }
+
+  async function renderWisataTable() {
+    const list = await window.DesaData.getWisata();
+    const tbody = document.getElementById('wisataTableBody');
+    const empty = document.getElementById('wisataEmptyState');
+
+    if (list.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = list.map(w => {
+      const imgHtml = w.foto_url
+        ? `<img src="${w.foto_url}" class="w-14 h-10 rounded-lg object-cover border border-stone" alt="${w.nama}">`
+        : `<div class="w-14 h-10 rounded-lg bg-stone/70 text-dark flex items-center justify-center text-xs"><i class="fa-solid fa-mountain-sun"></i></div>`;
+
+      return `
+      <tr class="border-t border-stone hover:bg-stone/20 transition">
+        <td class="px-4 py-3">${imgHtml}</td>
+        <td class="px-4 py-3 font-semibold text-dark">${w.nama}</td>
+        <td class="px-4 py-3 text-[#3c5347]"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-forest/10 text-forest">${w.badge}</span></td>
+        <td class="px-4 py-3 text-[#3c5347]">${w.tiket || '-'}</td>
+        <td class="px-4 py-3 text-[#3c5347]">${w.urutan}</td>
+        <td class="px-4 py-3 text-right">
+          <button onclick='openWisataModal(${JSON.stringify(w)})' class="text-terra font-bold text-[12.5px] hover:underline mr-3"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+          <button onclick="handleDeleteWisata('${w.id}')" class="text-red-500 font-bold text-[12.5px] hover:underline"><i class="fa-solid fa-trash mr-1"></i>Hapus</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function handleDeleteWisata(id) {
+    if (!confirm('Hapus destinasi wisata ini?')) return;
+    const result = await window.DesaData.deleteWisata(id);
+    if (result.ok) { renderWisataTable(); } else { alert('Gagal menghapus: ' + result.message); }
+  }
+
+  document.getElementById('wisataForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('wisataSubmitBtn');
+    const errBox = document.getElementById('wisataFormError');
+    errBox.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    try {
+      const fileInput = document.getElementById('wisata-foto-file');
+      let fotoUrl = document.getElementById('wisata-foto-existing').value || null;
+
+      if (fileInput.files && fileInput.files[0]) {
+        btn.textContent = 'Mengunggah Foto Wisata...';
+        const uploadedUrl = await window.DesaData.uploadFotoFile(fileInput.files[0], 'wisata');
+        if (uploadedUrl) fotoUrl = uploadedUrl;
+      }
+
+      const tagsRaw = document.getElementById('wisata-tags').value.trim();
+      const item = {
+        id: document.getElementById('wisata-id').value || null,
+        nama: document.getElementById('wisata-nama').value.trim(),
+        foto_url: fotoUrl,
+        badge: document.getElementById('wisata-badge').value,
+        urutan: document.getElementById('wisata-urutan').value,
+        deskripsi: document.getElementById('wisata-deskripsi').value.trim(),
+        ketinggian: document.getElementById('wisata-ketinggian').value.trim(),
+        durasi: document.getElementById('wisata-durasi').value.trim(),
+        tiket: document.getElementById('wisata-tiket').value.trim(),
+        tags: tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : []
+      };
+
+      const result = await window.DesaData.saveWisata(item);
+      if (result.ok) { closeWisataModal(); renderWisataTable(); }
+      else {
+        errBox.textContent = 'Gagal menyimpan: ' + result.message;
+        errBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errBox.textContent = 'Terjadi kesalahan: ' + err.message;
+      errBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan';
+    }
+  });
+
+  /* -----------------------------------------------------------
+     4. BERITA DESA
+     ----------------------------------------------------------- */
+  function openBeritaModal(item) {
+    document.getElementById('beritaForm').reset();
+    document.getElementById('beritaFormError').classList.add('hidden');
+
+    if (item) {
+      document.getElementById('beritaModalTitle').textContent = 'Edit Artikel Berita';
+      document.getElementById('berita-id').value = item.id;
+      document.getElementById('berita-judul').value = item.judul;
+      document.getElementById('berita-kategori').value = item.kategori || 'Kegiatan Desa';
+      document.getElementById('berita-penulis').value = item.penulis || 'Humas Desa Cihawuk';
+      document.getElementById('berita-ringkasan').value = item.ringkasan || '';
+      document.getElementById('berita-konten').value = item.konten || '';
+      document.getElementById('berita-foto-existing').value = item.foto_url || '';
+      setPreviewUrl('beritaPreviewImg', 'beritaPreviewPlaceholder', item.foto_url);
+    } else {
+      document.getElementById('beritaModalTitle').textContent = 'Tambah Berita Baru';
+      document.getElementById('berita-id').value = '';
+      document.getElementById('berita-foto-existing').value = '';
+      document.getElementById('berita-penulis').value = 'Humas Desa Cihawuk';
+      setPreviewUrl('beritaPreviewImg', 'beritaPreviewPlaceholder', null);
+    }
+    document.getElementById('beritaModal').classList.add('active');
+  }
+
+  function closeBeritaModal() {
+    document.getElementById('beritaModal').classList.remove('active');
+  }
+
+  async function renderBeritaTable() {
+    const list = await window.DesaData.getBerita();
+    const tbody = document.getElementById('beritaTableBody');
+    const empty = document.getElementById('beritaEmptyState');
+
+    if (list.length === 0) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+
+    tbody.innerHTML = list.map(b => {
+      const imgHtml = b.foto_url
+        ? `<img src="${b.foto_url}" class="w-14 h-10 rounded-lg object-cover border border-stone" alt="${b.judul}">`
+        : `<div class="w-14 h-10 rounded-lg bg-terra/10 text-terra flex items-center justify-center text-xs"><i class="fa-solid fa-newspaper"></i></div>`;
+
+      const tgl = b.created_at ? new Date(b.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
+      return `
+      <tr class="border-t border-stone hover:bg-stone/20 transition">
+        <td class="px-4 py-3">${imgHtml}</td>
+        <td class="px-4 py-3 font-semibold text-dark max-w-xs truncate">${b.judul}</td>
+        <td class="px-4 py-3 text-[#3c5347]"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-cream text-terra border border-stone">${b.kategori || 'Berita'}</span></td>
+        <td class="px-4 py-3 text-[#3c5347] text-[12.5px]">${b.penulis || 'Admin'}</td>
+        <td class="px-4 py-3 text-[#3c5347] text-[12.5px]">${tgl}</td>
+        <td class="px-4 py-3 text-right">
+          <button onclick='openBeritaModal(${JSON.stringify(b)})' class="text-terra font-bold text-[12.5px] hover:underline mr-3"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+          <button onclick="handleDeleteBerita('${b.id}')" class="text-red-500 font-bold text-[12.5px] hover:underline"><i class="fa-solid fa-trash mr-1"></i>Hapus</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function handleDeleteBerita(id) {
+    if (!confirm('Hapus artikel berita ini?')) return;
+    const result = await window.DesaData.deleteBerita(id);
+    if (result.ok) { renderBeritaTable(); } else { alert('Gagal menghapus: ' + result.message); }
+  }
+
+  document.getElementById('beritaForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('beritaSubmitBtn');
+    const errBox = document.getElementById('beritaFormError');
+    errBox.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    try {
+      const fileInput = document.getElementById('berita-foto-file');
+      let fotoUrl = document.getElementById('berita-foto-existing').value || null;
+
+      if (fileInput.files && fileInput.files[0]) {
+        btn.textContent = 'Mengunggah Sampul Berita...';
+        const uploadedUrl = await window.DesaData.uploadFotoFile(fileInput.files[0], 'berita');
+        if (uploadedUrl) fotoUrl = uploadedUrl;
+      }
+
+      const item = {
+        id: document.getElementById('berita-id').value || null,
+        judul: document.getElementById('berita-judul').value.trim(),
+        foto_url: fotoUrl,
+        kategori: document.getElementById('berita-kategori').value,
+        penulis: document.getElementById('berita-penulis').value.trim(),
+        ringkasan: document.getElementById('berita-ringkasan').value.trim(),
+        konten: document.getElementById('berita-konten').value.trim()
+      };
+
+      const result = await window.DesaData.saveBerita(item);
+      if (result.ok) { closeBeritaModal(); renderBeritaTable(); }
+      else {
+        errBox.textContent = 'Gagal menyimpan: ' + result.message;
+        errBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errBox.textContent = 'Terjadi kesalahan: ' + err.message;
+      errBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Simpan Berita';
+    }
+  });
+
+  // INIT
+  (async () => {
+    // Register Image Preview listeners
+    setupImagePreview('staf-foto-file', 'stafPreviewImg', 'stafPreviewPlaceholder');
+    setupImagePreview('edukasi-foto-file', 'edukasiPreviewImg', 'edukasiPreviewPlaceholder');
+    setupImagePreview('wisata-foto-file', 'wisataPreviewImg', 'wisataPreviewPlaceholder');
+    setupImagePreview('berita-foto-file', 'beritaPreviewImg', 'beritaPreviewPlaceholder');
+
+    // Auth verification
+    const admin = await window.DesaAuth.requireAdmin();
+    if (!admin) return;
+
+    document.getElementById('adminName').textContent = 'Admin: ' + admin.nama;
+    document.getElementById('dashboardContent').classList.remove('hidden');
+
+    renderStafTable();
+    renderEdukasiTable();
+    renderWisataTable();
+    renderBeritaTable();
+  })();
+</script>
+</body>
+</html>
