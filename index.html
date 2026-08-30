@@ -884,22 +884,20 @@ async function loadUmkmView(){
 
 async function loadUmkmStats(){
   try {
-    const { data: produk, error } = await taniClient
-      .from('products')
-      .select('id, kategori, producer_id')
-      .eq('status', 'APPROVED');
+    // Hitung produsen aktif langsung dari tabel producers
+    const [{ count: jumlahProdusen }, { data: produk }] = await Promise.all([
+      taniClient.from('producers').select('id', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+      taniClient.from('products').select('id, kategori').eq('status', 'APPROVED')
+    ]);
 
-    if(error || !produk) return;
-
-    const jumlahProduk   = produk.length;
-    const jumlahProdusen = new Set(produk.map(p => p.producer_id).filter(Boolean)).size;
-    const jumlahKategori = new Set(produk.map(p => p.kategori).filter(Boolean)).size;
+    const jumlahProduk   = produk ? produk.length : 0;
+    const jumlahKategori = produk ? new Set(produk.map(p => p.kategori).filter(Boolean)).size : 0;
 
     const elProdusen = document.getElementById('stat-produsen');
     const elProduk   = document.getElementById('stat-produk');
     const elKategori = document.getElementById('stat-kategori');
 
-    if(elProdusen) elProdusen.textContent = jumlahProdusen;
+    if(elProdusen) elProdusen.textContent = jumlahProdusen ?? '–';
     if(elProduk)   elProduk.textContent   = jumlahProduk;
     if(elKategori) elKategori.textContent = jumlahKategori;
   } catch(e) {
