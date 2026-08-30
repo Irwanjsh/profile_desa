@@ -52,6 +52,7 @@ function openStafModal(staf) {
     document.getElementById('staf-id').value = staf.id;
     document.getElementById('staf-nama').value = staf.nama;
     document.getElementById('staf-jabatan').value = staf.jabatan;
+    document.getElementById('staf-kelompok').value = staf.kelompok || '';
     document.getElementById('staf-tingkat').value = staf.tingkat;
     document.getElementById('staf-urutan').value = staf.urutan;
     document.getElementById('staf-foto-existing').value = staf.foto_url || '';
@@ -59,6 +60,7 @@ function openStafModal(staf) {
   } else {
     document.getElementById('stafModalTitle').textContent = 'Tambah Staf Baru';
     document.getElementById('staf-id').value = '';
+    document.getElementById('staf-kelompok').value = '';
     document.getElementById('staf-foto-existing').value = '';
     setPreviewUrl('stafPreviewImg', 'stafPreviewPlaceholder', null);
   }
@@ -86,12 +88,16 @@ async function renderStafTable() {
       ? `<img src="${s.foto_url}" class="w-10 h-10 rounded-full object-cover border border-stone" alt="${s.nama}">`
       : `<div class="w-10 h-10 rounded-full bg-forest/10 text-forest font-bold flex items-center justify-center text-xs"><i class="fa-solid fa-user"></i></div>`;
 
+    const kelompokHtml = s.kelompok
+      ? `<span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-terra/10 text-terra">${s.kelompok}</span>`
+      : `<span class="text-gray-400 text-[11px]">-</span>`;
+
     return `
     <tr class="border-t border-stone hover:bg-stone/20 transition">
       <td class="px-4 py-3">${avatarHtml}</td>
       <td class="px-4 py-3 font-semibold text-dark">${s.nama}</td>
       <td class="px-4 py-3 text-[#3c5347]">${s.jabatan}</td>
-      <td class="px-4 py-3 text-[#3c5347]"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone/70">Tingkat ${s.tingkat}</span></td>
+      <td class="px-4 py-3 text-[#3c5347]"><span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-stone/70">Tingkat ${s.tingkat}</span> ${kelompokHtml}</td>
       <td class="px-4 py-3 text-[#3c5347]">${s.urutan}</td>
       <td class="px-4 py-3 text-right">
         <button onclick='openStafModal(${JSON.stringify(s)})' class="text-terra font-bold text-[12.5px] hover:underline mr-3"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
@@ -130,6 +136,7 @@ document.getElementById('stafForm').addEventListener('submit', async (e) => {
       id: document.getElementById('staf-id').value || null,
       nama: document.getElementById('staf-nama').value.trim(),
       jabatan: document.getElementById('staf-jabatan').value.trim(),
+      kelompok: document.getElementById('staf-kelompok').value.trim() || null,
       foto_url: fotoUrl,
       tingkat: document.getElementById('staf-tingkat').value,
       urutan: document.getElementById('staf-urutan').value

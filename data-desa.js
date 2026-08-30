@@ -68,7 +68,8 @@
       jabatan: item.jabatan,
       foto_url: item.foto_url || null,
       tingkat: Number(item.tingkat),
-      urutan: Number(item.urutan)
+      urutan: Number(item.urutan),
+      kelompok: item.kelompok ? item.kelompok.trim() : null
     };
 
     if (item.id) {

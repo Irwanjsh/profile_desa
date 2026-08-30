@@ -216,11 +216,16 @@
         <label class="block text-[12px] font-bold text-dark mb-1">Jabatan</label>
         <input type="text" id="staf-jabatan" required placeholder="Cth: Kepala Desa / Sekretaris Desa" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
       </div>
+      <div>
+        <label class="block text-[12px] font-bold text-dark mb-1">Kelompok / Cabang (Opsional)</label>
+        <input type="text" id="staf-kelompok" placeholder="Cth: Unsur Staf, Unsur Wilayah, Lembaga Desa, Unsur Keamanan" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
+        <p class="text-[10.5px] text-[#6b8577] mt-1">Kosongkan jika hanya 1 orang/alur utama di tingkat ini (Kades/Sekdes)</p>
+      </div>
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-[12px] font-bold text-dark mb-1">Tingkat Hirarki</label>
           <input type="number" id="staf-tingkat" required min="1" value="1" class="w-full px-3.5 py-2.5 rounded-xl border border-stone text-[13.5px] focus:outline-none focus:ring-2 focus:ring-terra">
-          <p class="text-[10.5px] text-[#6b8577] mt-1">1=Kades, 2=Sekdes, 3=Kaur/Kasi</p>
+          <p class="text-[10.5px] text-[#6b8577] mt-1">1=Kades, 2=Sekdes, 3=Kaur/Kasi/Kadus, dst</p>
         </div>
         <div>
           <label class="block text-[12px] font-bold text-dark mb-1">Urutan Tampilan</label>

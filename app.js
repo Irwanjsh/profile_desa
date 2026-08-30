@@ -453,10 +453,43 @@ async function loadStrukturStaf(){
     const items = groups[t];
     if(idx > 0) html += '<div class="org-line"></div>';
 
-    if(items.length === 1){
-      html += idx === 0 ? stafBoxDark(items[0]) : stafBoxLight(items[0]);
+    // Kelompokkan lagi berdasarkan nilai `kelompok`
+    const clusters = {};
+    items.forEach(s => {
+      const k = (s.kelompok || '').trim();
+      (clusters[k] = clusters[k] || []).push(s);
+    });
+    const clusterKeys = Object.keys(clusters);
+
+    // Jika dalam 1 tingkat hanya ada 1 kelompok (atau semua kosong/null)
+    if (clusterKeys.length <= 1) {
+      if (items.length === 1) {
+        html += idx === 0 ? stafBoxDark(items[0]) : stafBoxLight(items[0]);
+      } else {
+        html += `<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-3xl">${items.map(stafBoxSmall).join('')}</div>`;
+      }
     } else {
-      html += `<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-3xl">${items.map(stafBoxSmall).join('')}</div>`;
+      // Ada lebih dari 1 kelompok berbeda di tingkat yang sama (struktur bercabang)
+      let gridColClass = 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-6xl';
+      if (clusterKeys.length === 2) gridColClass = 'grid-cols-1 md:grid-cols-2 max-w-3xl';
+      else if (clusterKeys.length === 3) gridColClass = 'grid-cols-1 md:grid-cols-3 max-w-5xl';
+
+      const clusterHtml = clusterKeys.map(k => {
+        const clusterItems = clusters[k];
+        const titleHtml = k ? `<p class="text-[11px] font-bold uppercase tracking-wider text-terra text-center mb-3">${k}</p>` : '';
+        const cardsHtml = clusterItems.length === 1
+          ? stafBoxLight(clusterItems[0])
+          : `<div class="grid grid-cols-1 gap-3 w-full">${clusterItems.map(stafBoxSmall).join('')}</div>`;
+
+        return `
+          <div class="flex flex-col items-center w-full">
+            ${titleHtml}
+            ${cardsHtml}
+          </div>
+        `;
+      }).join('');
+
+      html += `<div class="grid ${gridColClass} gap-6 w-full items-start">${clusterHtml}</div>`;
     }
   });
 
