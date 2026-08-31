@@ -321,8 +321,8 @@ async function loadBerandaEdukasiPreview(){
       ${e.foto_url
         ? `<img src="${e.foto_url}" class="w-full h-28 object-cover rounded-xl mb-1 border border-white/10" alt="${e.judul}">`
         : `<i class="fa-solid ${e.icon || 'fa-book-open'} text-terra text-2xl mb-1"></i>`}
-      <h4 class="text-white font-bold text-[15px] leading-snug">${e.judul}</h4>
-      <p class="text-white/55 text-[12.5px] line-clamp-2">${e.ringkasan || e.konten?.substring(0,80) || ''}</p>
+      <h4 class="text-white font-bold text-[15.5px] leading-snug">${e.judul}</h4>
+      <p class="text-white/90 text-[13px] leading-relaxed line-clamp-2">${e.ringkasan || e.konten?.substring(0,80) || ''}</p>
     </div>`).join('');
 }
 
