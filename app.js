@@ -44,6 +44,12 @@ function showView(viewName){
   if(location.hash !== '#' + viewName){ history.pushState(null, '', '#' + viewName); }
   closeDrawer();
 
+  if(viewName === 'beranda'){
+    loadBerandaUmkmPreview();
+    loadBerandaWisataPreview();
+    loadBerandaEdukasiPreview();
+    loadBerandaBeritaPreview();
+  }
   if(viewName === 'profil'){ initMap(); setTimeout(invalidateMapSize, 250); loadStrukturStaf(); }
   if(viewName === 'umkm'){ loadUmkmView(); }
   if(viewName === 'wisata'){ loadWisataView(); }
@@ -626,6 +632,55 @@ async function loadBerandaBeritaPreview(){
 }
 
 /* ================================================================
+   REALTIME SYNCHRONIZATION (Supabase Realtime)
+================================================================ */
+function initRealtimeSubscriptions(){
+  try {
+    // Realtime listener untuk data profil desa (Wisata, Edukasi, Berita, Staf)
+    desaClient
+      .channel('realtime-desa-all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wisata' }, () => {
+        loadBerandaWisataPreview();
+        const v = document.getElementById('view-wisata');
+        if(v && v.classList.contains('active')) loadWisataView();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'edukasi' }, () => {
+        loadBerandaEdukasiPreview();
+        const v = document.getElementById('view-edukasi');
+        if(v && v.classList.contains('active')) loadEdukasiView();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'berita' }, () => {
+        loadBerandaBeritaPreview();
+        const v = document.getElementById('view-berita');
+        if(v && v.classList.contains('active')) loadBeritaView();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'staf_desa' }, () => {
+        const v = document.getElementById('view-profil');
+        if(v && v.classList.contains('active')) loadStrukturStaf();
+      })
+      .subscribe();
+
+    // Realtime listener untuk data UMKM & Produsen Tani Cihawuk
+    taniClient
+      .channel('realtime-tani-all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        loadBerandaUmkmPreview();
+        loadUmkmStats();
+        const v = document.getElementById('view-umkm');
+        if(v && v.classList.contains('active')) loadUmkmView();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'producers' }, () => {
+        loadUmkmStats();
+        const v = document.getElementById('view-umkm');
+        if(v && v.classList.contains('active')) loadUmkmView();
+      })
+      .subscribe();
+  } catch(err) {
+    console.warn('[Realtime] Gagal inisialisasi subscription:', err.message);
+  }
+}
+
+/* ================================================================
    INIT
 ================================================================ */
 async function loadBerandaUmkmPreview(){
@@ -645,4 +700,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('formAdvokasi').addEventListener('submit', handleFormAdvokasi);
 
   handleHashNavigation();
+  initRealtimeSubscriptions();
 });
